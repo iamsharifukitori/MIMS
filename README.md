@@ -2,7 +2,7 @@
 
 A modern, high-performance Pharmacy and Medical Inventory Management System built with Django. Designed for speed, accuracy, and a "Money-First" retail approach.
 
-## ✨ Key Features
+## Key Features
 
 - **Advanced Analytics:** Real-time dashboard showing most moving products, highest profit margins, and 7-day revenue trends.
 - **Excel-Style Inventory:** Professional, high-readability ledger for tracking stock levels with integrated live search and low-stock alerts.
@@ -56,7 +56,7 @@ Bash
 python manage.py runserver
 Visit http://127.0.0.1:8000/dashboard/ to view the system.
 
-📁 Project Structure
+Project Structure
 Kdevtools/ - Project settings and main URL routing.
 
 mims/ - Core application logic.
