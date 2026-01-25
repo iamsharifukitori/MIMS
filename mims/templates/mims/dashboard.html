@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MIMS | Modern Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+
+    <div class="flex h-screen overflow-hidden">
+        <aside class="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col">
+            <div class="p-6">
+                <h1 class="text-2xl font-bold text-blue-600 flex items-center">
+                    <span class="mr-2">🏥</span> MIMS
+                </h1>
+            </div>
+            <nav class="flex-1 px-4 space-y-2 py-4">
+                <a href="{% url 'dashboard' %}" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'dashboard' %}bg-blue-50 text-blue-700{% else %}text-slate-600{% endif %} rounded-lg font-semibold">
+                    <span class="mr-3">📊</span> Dashboard
+                </a>
+                <a href="{% url 'inventory' %}" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'inventory' %}bg-blue-50 text-blue-700{% else %}text-slate-600{% endif %} rounded-lg font-semibold">
+                    <span class="mr-3">💊</span> Inventory
+                </a>
+                <a href="{% url 'create_sale' %}" class="flex items-center px-4 py-3 ...">
+                    <span class="mr-3">🛒</span> Sales
+                </a>
+                <a href="/admin/mims/purchase/" class="flex items-center px-4 py-3 text-slate-600 hover:bg-slate-50 rounded-lg transition">
+                    <span class="mr-3">📦</span> Purchases
+                </a>
+                <a href="/admin/mims/expense/" class="flex items-center px-4 py-3 text-slate-600 hover:bg-slate-50 rounded-lg transition">
+                    <span class="mr-3">📉</span> Expenses
+                </a>
+            </nav>
+            <div class="p-4 border-t border-slate-100">
+                <p class="text-xs text-slate-400">v1.0.26 Beta</p>
+            </div>
+        </aside>
+
+        <main class="flex-1 overflow-y-auto relative">
+            <header class="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-slate-200 px-8 py-4 flex justify-between items-center">
+                <h2 class="text-xl font-semibold text-slate-800">Business Analytics</h2>
+                <div class="flex items-center space-x-4">
+                    <span class="bg-red-100 text-red-600 px-3 py-1 rounded-full text-xs font-bold">
+                        {{ active_loans }} Active Loans
+                    </span>
+                    <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">A</div>
+                </div>
+            </header>
+
+            {% block content %}
+            <div class="p-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                        <p class="text-sm text-slate-500 font-medium mb-1">Daily Revenue</p>
+                        <h4 class="text-2xl font-bold text-slate-900">Tsh   {{ daily_revenue|floatformat:2 }}</h4>
+                        <div class="mt-2 text-xs text-slate-400">Updated just now</div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                        <p class="text-sm text-slate-500 font-medium mb-1">Monthly Sales</p>
+                        <h4 class="text-2xl font-bold text-slate-900">Tsh  {{ monthly_revenue|floatformat:2 }}</h4>
+                        <div class="mt-2 text-xs text-green-500 font-bold">Current month</div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                        <p class="text-sm text-slate-500 font-medium mb-1">Most Moving Product</p>
+                        <h4 class="text-lg font-bold text-blue-600 truncate">{{ most_moving.product__name|default:"No Data" }}</h4>
+                        <div class="mt-2 text-xs text-slate-400">{{ most_moving.total_sold|default:0 }} Units Sold</div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                        <p class="text-sm text-slate-500 font-medium mb-1">Highest Profit Margin</p>
+                        <h4 class="text-lg font-bold text-emerald-600 truncate">{{ most_profitable.name|default:"No Data" }}</h4>
+                        <div class="mt-2 text-xs text-slate-400">Tsh   {{ most_profitable.profit_per_unit|floatformat:2 }} per unit</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-2 bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+                        <h3 class="text-lg font-bold text-slate-800 mb-6">Revenue Performance (Last 7 Days)</h3>
+                        <canvas id="revenueChart" class="w-full" height="300"></canvas>
+                    </div>
+
+                    <div class="bg-blue-600 p-8 rounded-2xl shadow-lg text-white">
+                        <h3 class="text-xl font-bold mb-6">Insights & Tips</h3>
+                        <div class="space-y-6">
+                            <div class="bg-white/10 p-4 rounded-xl">
+                                <p class="text-blue-100 text-xs mb-1 uppercase tracking-wider font-bold">Inventory Alert</p>
+                                <p class="text-sm">3 products are reaching minimum threshold. Review purchases soon.</p>
+                            </div>
+                            <div class="bg-white/10 p-4 rounded-xl">
+                                <p class="text-blue-100 text-xs mb-1 uppercase tracking-wider font-bold">Loan Risk</p>
+                                <p class="text-sm">Loan balance has increased by 12% this week. Monitor collections.</p>
+                            </div>
+                        </div>
+                        <button class="mt-8 w-full bg-white text-blue-600 font-bold py-3 rounded-xl hover:bg-blue-50 transition">
+                            Generate Full Report
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+                const ctx = document.getElementById('revenueChart').getContext('2d');
+                const labels = {{ graph_labels|safe }};
+                const data = {{ graph_data|safe }};
+
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Revenue (Tsh   )',
+                            data: data,
+                            borderColor: '#2563eb',
+                            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#2563eb'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, grid: { borderDash: [5, 5], color: '#e2e8f0' }, ticks: { color: '#64748b' } },
+                            x: { grid: { display: false }, ticks: { color: '#64748b' } }
+                        }
+                    }
+                });
+            </script>
+            {% endblock %}
+            </main>
+    </div>
+</body>
+</html>

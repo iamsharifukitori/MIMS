@@ -1,0 +1,136 @@
+{% extends 'mims/dashboard.html' %}
+
+{% block content %}
+<div class="p-8 max-w-5xl mx-auto">
+    <div class="mb-8 flex justify-between items-end">
+        <div>
+            <h2 class="text-2xl font-bold text-slate-800">Process New Sale</h2>
+            <p class="text-slate-500 text-sm">Money-first approach: Enter payment in Tsh to calculate units.</p>
+        </div>
+        <div class="text-right">
+            <p class="text-xs font-bold text-slate-400 uppercase">Grand Total</p>
+            <h3 id="grandTotal" class="text-3xl font-black text-blue-600">Tsh 0</h3>
+        </div>
+    </div>
+
+    <form method="POST" id="saleForm" class="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+        {% csrf_token %}
+        
+        <div class="overflow-x-auto">
+            <table class="w-full mb-6" id="itemsTable">
+                <thead>
+                    <tr class="text-left border-b border-slate-100">
+                        <th class="pb-4 font-bold text-slate-700 w-1/3">Search Medicine</th>
+                        <th class="pb-4 font-bold text-slate-700">Money Paid (Tsh)</th>
+                        <th class="pb-4 font-bold text-slate-700">Qty (Units)</th>
+                        <th class="pb-4 font-bold text-slate-700">Unit Price</th>
+                        <th class="pb-4 text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="saleItemsBody" class="divide-y divide-slate-50">
+                    <tr class="sale-item-row">
+                        <td class="py-4 pr-4">
+                            <input list="productsList" name="product_name[]" class="product-input w-full p-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="Type medicine name..." required>
+                        </td>
+                        <td class="py-4 pr-4">
+                            <input type="number" name="money_paid[]" class="money-input w-full p-2 border border-slate-200 rounded-lg" placeholder="0" required>
+                        </td>
+                        <td class="py-4 pr-4">
+                            <input type="number" name="quantity[]" class="qty-input w-full p-2 border border-slate-200 rounded-lg bg-slate-50" placeholder="0" required>
+                        </td>
+                        <td class="py-4">
+                            <span class="unit-price font-mono text-slate-500">Tsh 0</span>
+                        </td>
+                        <td class="py-4 text-center">
+                            <button type="button" class="text-red-400 hover:text-red-600 remove-row transition">✕</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <datalist id="productsList">
+            {% for item in products %}
+            <option data-id="{{ item.id }}" data-price="{{ item.sell_price_per_base }}" value="{{ item.name }}">
+                Stock: {{ item.stock_qty }} | Price: Tsh {{ item.sell_price_per_base }}
+            </option>
+            {% endfor %}
+        </datalist>
+
+        <div class="flex justify-between items-center mt-6 pt-6 border-t border-slate-100">
+            <button type="button" id="addRow" class="text-blue-600 font-bold flex items-center gap-2 hover:bg-blue-50 px-4 py-2 rounded-lg transition">
+                <span>➕</span> Add Another Medicine
+            </button>
+            
+            <div class="flex gap-4">
+                <a href="{% url 'dashboard' %}" class="px-6 py-2 text-slate-600 font-semibold">Cancel</a>
+                <button type="submit" class="bg-blue-600 text-white px-8 py-2 rounded-lg font-bold hover:bg-blue-700 shadow-lg transition-all">
+                    Complete Sale & Print
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    const dataList = document.getElementById('productsList');
+    const tbody = document.getElementById('saleItemsBody');
+
+    function calculateRow(row) {
+        const productInput = row.querySelector('.product-input');
+        const moneyInput = row.querySelector('.money-input');
+        const qtyInput = row.querySelector('.qty-input');
+        const priceDisplay = row.querySelector('.unit-price');
+
+        const option = Array.from(dataList.options).find(opt => opt.value === productInput.value);
+        
+        if (option) {
+            const price = parseFloat(option.getAttribute('data-price'));
+            priceDisplay.innerText = `Tsh ${price.toLocaleString()}`;
+            
+            if (document.activeElement === moneyInput) {
+                const money = parseFloat(moneyInput.value) || 0;
+                qtyInput.value = Math.floor(money / price); 
+            } 
+            else if (document.activeElement === qtyInput) {
+                const qty = parseInt(qtyInput.value) || 0;
+                moneyInput.value = Math.round(qty * price);
+            }
+        }
+        updateGrandTotal();
+    }
+
+    function updateGrandTotal() {
+        let total = 0;
+        document.querySelectorAll('.money-input').forEach(input => {
+            total += parseFloat(input.value) || 0;
+        });
+        document.getElementById('grandTotal').innerText = `Tsh ${total.toLocaleString()}`;
+    }
+
+    tbody.addEventListener('input', (e) => {
+        if (e.target.classList.contains('product-input') || 
+            e.target.classList.contains('money-input') || 
+            e.target.classList.contains('qty-input')) {
+            calculateRow(e.target.closest('tr'));
+        }
+    });
+
+    document.getElementById('addRow').addEventListener('click', () => {
+        const firstRow = tbody.querySelector('.sale-item-row');
+        const newRow = firstRow.cloneNode(true);
+        newRow.querySelectorAll('input').forEach(input => input.value = '');
+        newRow.querySelector('.unit-price').innerText = 'Tsh 0';
+        tbody.appendChild(newRow);
+    });
+
+    tbody.addEventListener('click', (e) => {
+        if (e.target.classList.contains('remove-row')) {
+            if (tbody.rows.length > 1) {
+                e.target.closest('tr').remove();
+                updateGrandTotal();
+            }
+        }
+    });
+</script>
+{% endblock %}
