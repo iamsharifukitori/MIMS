@@ -1,0 +1,108 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MIMS | Login</title>
+    <script src="{% static 'js/tailwindcss.js' %}"></script>
+    <style>
+        body { 
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            overflow: hidden; /* Prevents scrolling */
+        }
+        .medical-gradient {
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+
+    <div class="flex h-screen overflow-hidden">
+        <div class="flex flex-col justify-center flex-1 px-8 lg:flex-none lg:px-24 xl:px-32 bg-white h-full">
+            <div class="w-full max-w-sm mx-auto text-center">
+                <div class="mb-10 flex flex-col items-center">
+                    <img src="{% static 'images/beemedicslogo1.png' %}" alt="Logo" class="h-32 w-auto mb-1"> <p class="text-sm text-slate-500 font-semibold tracking-wide uppercase">Inventory & Management System v1.0.28</p>
+                </div>
+
+                <div class="mt-8 text-left">
+                    <form method="POST" class="space-y-6">
+                        {% csrf_token %}
+                        
+                        {% if form.errors %}
+                        <div class="p-3 bg-red-50 border-2 border-red-200 mb-4">
+                            <p class="text-xs text-red-600 font-bold">Invalid username or password.</p>
+                        </div>
+                        {% endif %}
+
+                        <div>
+                            <label for="username" class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Username</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-3 text-slate-400">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                </span>
+                                <input id="username" name="username" type="text" required 
+                                    class="w-full pl-10 pr-4 py-3 border-2 border-slate-400 rounded-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition text-sm text-slate-900 font-medium"
+                                    placeholder="Enter your username">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="password" class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Password</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-3 text-slate-400">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                    </svg>
+                                </span>
+                                <input id="password" name="password" type="password" required 
+                                    class="w-full pl-10 pr-4 py-3 border-2 border-slate-400 rounded-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition text-sm text-slate-900 font-medium"
+                                    placeholder="••••••••">
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <input id="remember-me" name="remember-me" type="checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-2 border-slate-400 rounded-none">
+                                <label for="remember-me" class="ml-2 block text-sm font-bold text-slate-600">Remember me</label>
+                            </div>
+                        </div>
+
+                        <div>
+                            <button type="submit" class="w-full flex justify-center py-4 px-4 border-2 border-transparent font-bold text-white bg-slate-900 hover:bg-black focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition shadow-xl uppercase tracking-widest">
+                                Log in
+                            </button>
+                        </div>
+                        <div class="mt-12 border-t-2 border-slate-100 pt-6">
+                    <p class="text-xs text-slate-400 font-bold italic tracking-tighter ">Secure Offline Portal | Beemedics Solutions</p>
+                        </div>
+                    </form>
+                </div>
+                
+            </div>
+        </div>
+
+        <div class="relative hidden w-0 flex-1 lg:block medical-gradient">
+            <div class="absolute inset-0 flex flex-col items-center justify-center p-12 text-white">
+                <div class="max-w-md text-center">
+                    <div class="inline-flex p-4 bg-white/10 rounded-full mb-8 backdrop-blur-md">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-blue-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 01-.586 1.414l-2.828 2.828a2 2 0 01-1.414.586H8.828a2 2 0 01-1.414-.586l-2.828-2.828A2 2 0 014 10.172V5L3 4h5z" />
+                        </svg>
+                    </div>
+                    <h2 class="text-4xl font-bold mb-4 tracking-tight">Precision in every dose.</h2>
+                    <p class="text-blue-100 text-lg">Managing stock, expiry, and sales with the care your patients deserve.</p>
+                </div>
+                
+                <div class="absolute bottom-12 left-12 right-12">
+                    <div class="h-1.5 w-24 bg-blue-400 mb-4"></div>
+                    <p class="text-xs text-blue-300 font-bold tracking-widest uppercase">Reliability • Integrity • Speed</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

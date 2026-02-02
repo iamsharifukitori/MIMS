@@ -38,6 +38,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'mims',
+    'import_export',
+    'django.contrib.humanize',
 ]
 
 MIDDLEWARE = [
@@ -62,6 +64,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'mims.context_processors.notifications',
             ],
         },
     },
@@ -116,3 +119,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+# Where to redirect after successful login
+LOGIN_REDIRECT_URL = 'dashboard'
+
+# Where to redirect if a user tries to access a protected page
+LOGIN_URL = 'login'
+
+# Where to go after logging out
+LOGOUT_REDIRECT_URL = 'login'

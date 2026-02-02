@@ -1,0 +1,128 @@
+{% extends 'mims/dashboard.html' %}
+{% load static %}
+{% block content %}
+<style>
+    /* EXCEL COMPRESSION STYLES */
+    .excel-tight { width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; }
+    .excel-tight th { 
+        background-color: #f1f5f9; 
+        border: 1px solid #cbd5e1; 
+        padding: 4px 8px; 
+        font-size: 11px; 
+        color: #475569;
+    }
+    .excel-tight td { 
+        border: 1px solid #e2e8f0; 
+        padding: 3px 8px; 
+        font-size: 11px; 
+        vertical-align: middle;
+    }
+    .excel-tight tr:nth-child(even) { background-color: #f8fafc; }
+
+    /* PRINT OPTIMIZATION */
+    @media print {
+        .no-print, .no-print-col { display: none !important; }
+        .buy-field { border: none !important; padding: 0 !important; color: black !important; font-weight: bold; }
+        .excel-tight td, .excel-tight th { padding: 2px 6px !important; border-color: #94a3b8 !important; }
+        .excel-tight { width: 100% !important; }
+        body { background-color: white !important; }
+        .bg-white { border: none !important; box-shadow: none !important; }
+    }
+
+    /* LOGO AREA STYLING */
+    .header-logo {
+        max-width: 300px;
+        height: auto;
+        display: block;
+        margin: 0 auto;
+    }
+</style>
+
+<div class="p-8">
+    <div class="flex justify-between items-center mb-6 no-print">
+        <div>
+            <h2 class="text-2xl font-bold text-slate-800">
+                {% if request.GET.type == 'expired' %}Expired Products Disposal List{% else %}Generated Purchase Order{% endif %}
+            </h2>
+            <p class="text-sm text-slate-500">Date: {{ today|date:"d M Y" }}</p>
+        </div>
+        <div class="flex gap-3">
+            <button onclick="window.print()" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-blue-100 transition hover:bg-blue-700">
+                <span>🖨️</span> Print List
+            </button>
+        </div>
+    </div>
+
+    <div class="hidden print:block mb-6 text-center">
+        <img src="{% static 'images/beemedicslogo1.png' %}" alt="MIMS Logo" class="header-logo mb-2">
+        <div class="text-sm font-bold uppercase border-t border-b border-slate-900 py-1 inline-block px-10">
+            {% if request.GET.type == 'expired' %}DISPOSAL LIST{% else %}PURCHASE ORDER{% endif %} | {{ today|date:"d M Y" }}
+        </div>
+    </div>
+
+    <div class="bg-white shadow-sm border border-slate-200 overflow-hidden">
+        <table class="excel-tight">
+            <thead>
+                <tr>
+                    <th class="text-center w-12 no-print">
+                        {% if request.GET.type == 'expired' %}Delete{% else %}Hide{% endif %}
+                    </th>
+                    
+                    <th class="text-left">Product Name</th>
+                    
+                    {% if request.GET.type == 'expired' %}
+                        <th class="text-left">Expiry Date</th>
+                    {% else %}
+                        <th class="text-left no-print-col">Current Stock</th>
+                        <th class="text-right">Order Qty (Boxes)</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                {% for p in alert_items %}
+                <tr>
+                    <td class="text-center no-print">
+                        {% if request.GET.type == 'expired' %}
+                            <form action="/admin/mims/product/{{ p.id }}/delete/" method="POST" onsubmit="return confirm('PERMANENTLY DELETE {{ p.name }} from database?');" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="text-slate-400 hover:text-red-600 transition p-1" title="Delete from Database">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            </form>
+                        {% else %}
+                            <button onclick="this.closest('tr').remove()" class="text-slate-300 hover:text-orange-500 transition p-1" title="Hide from print">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        {% endif %}
+                    </td>
+
+                    <td class="font-bold text-slate-800">{{ p.name }}</td>
+                    
+                    {% if request.GET.type == 'expired' %}
+                        <td class="text-red-600 font-mono">{{ p.expiry_date|date:"d M Y" }}</td>
+                    {% else %}
+                        <td class="text-slate-500 no-print-col">
+                            {{ p.stock_qty }} {{ p.bulk_unit|default:"Boxes" }} 
+                            <span class="text-slate-400 text-xs font-normal ml-1">
+                                ({% widthratio p.stock_qty 1 p.conversion_factor %} {{ p.base_unit|default:"tabs" }})
+                            </span>
+                        </td>
+                        <td class="text-right">
+                            <span contenteditable="true" class="buy-field inline-block min-w-[50px] px-2 border border-dashed border-blue-200 rounded-none text-blue-600 font-bold outline-none focus:bg-blue-50">10</span>
+                        </td>
+                    {% endif %}
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="px-6 py-10 text-center text-slate-400 italic">No alerts found in this category.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

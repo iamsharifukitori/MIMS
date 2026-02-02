@@ -1,145 +1,570 @@
+{% load static %}
+{% load humanize %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MIMS | Modern Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script src="{% static 'js/tailwindcss.js' %}"></script>
+    <script src="{% static 'js/chart.js' %}"></script>
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+        /* OFFLINE FONT STACK */
+        body { 
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+        }
+
+        /* Windows-like Slide Animation */
+        .win-slide-up {
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s linear;
+        }
+        
+        /* Modal Overlay Backdrop */
+        .modal-overlay {
+            background-color: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(2px);
+        }
+
+        @media print {
+            aside, .no-print { display: none !important; }
+            main { width: 100% !important; padding: 0 !important; }
+            .bg-slate-50 { background-color: white !important; }
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
 
     <div class="flex h-screen overflow-hidden">
-        <aside class="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col">
+        <aside class="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col no-print relative">
             <div class="p-6">
                 <h1 class="text-2xl font-bold text-blue-600 flex items-center">
-                    <span class="mr-2">🏥</span> MIMS
+                    <span class="mr-5">  </span>   MIMS
                 </h1>
             </div>
+            
             <nav class="flex-1 px-4 space-y-2 py-4">
-                <a href="{% url 'dashboard' %}" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'dashboard' %}bg-blue-50 text-blue-700{% else %}text-slate-600{% endif %} rounded-lg font-semibold">
-                    <span class="mr-3">📊</span> Dashboard
-                </a>
-                <a href="{% url 'inventory' %}" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'inventory' %}bg-blue-50 text-blue-700{% else %}text-slate-600{% endif %} rounded-lg font-semibold">
-                    <span class="mr-3">💊</span> Inventory
-                </a>
-                <a href="{% url 'create_sale' %}" class="flex items-center px-4 py-3 ...">
-                    <span class="mr-3">🛒</span> Sales
-                </a>
-                <a href="/admin/mims/purchase/" class="flex items-center px-4 py-3 text-slate-600 hover:bg-slate-50 rounded-lg transition">
-                    <span class="mr-3">📦</span> Purchases
-                </a>
-                <a href="/admin/mims/expense/" class="flex items-center px-4 py-3 text-slate-600 hover:bg-slate-50 rounded-lg transition">
-                    <span class="mr-3">📉</span> Expenses
-                </a>
+                <a href="{% url 'dashboard' %}" class="flex items-center px-4 py-3 rounded-lg font-semibold transition-colors {% if request.resolver_match.url_name == 'dashboard' %}bg-blue-50 text-blue-700{% else %}text-slate-600 hover:bg-slate-50{% endif %}">
+                <span class="mr-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                    </svg>
+                </span> 
+                Dashboard
+            </a>
+
+            <a href="{% url 'inventory' %}" class="flex items-center px-4 py-3 rounded-lg font-semibold transition-colors {% if request.resolver_match.url_name == 'inventory' %}bg-blue-50 text-blue-700{% else %}text-slate-600 hover:bg-slate-50{% endif %}">
+                <span class="mr-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                </span> 
+                Inventory
+            </a>
+
+            <a href="{% url 'sale_ledger' %}" class="flex items-center px-4 py-3 rounded-lg font-semibold transition-colors {% if request.resolver_match.url_name == 'sale_ledger' %}bg-blue-50 text-blue-700{% else %}text-slate-600 hover:bg-slate-50{% endif %}">
+                <span class="mr-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </span> 
+                Sales
+            </a>
+
+            <a href="{% url 'expense_list' %}" class="flex items-center px-4 py-3 rounded-lg font-semibold transition-colors {% if request.resolver_match.url_name == 'expense_list' %}bg-blue-50 text-blue-700{% else %}text-slate-600 hover:bg-slate-50{% endif %}">
+                <span class="mr-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                    </svg>
+                </span> 
+                Expenses
+            </a>
+                            <a href="{% url 'loans_list' %}" class="flex items-center px-4 py-3 rounded-lg font-semibold transition-colors {% if request.resolver_match.url_name == 'loans_list' %}bg-blue-50 text-blue-700{% else %}text-slate-600 hover:bg-slate-50{% endif %}">
+                <span class="mr-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                    </svg>
+                </span> 
+                Loans & Debt
+            </a>
             </nav>
-            <div class="p-4 border-t border-slate-100">
-                <p class="text-xs text-slate-400">v1.0.26 Beta</p>
+
+            <div class="p-4 border-t border-slate-100 flex items-center justify-between no-print bg-white z-50">
+                
+                <div class="relative">
+                    <button id="powerBtn" onclick="toggleLogoutMenu()" title="Power" class="p-2.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-full transition-all active:scale-90">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
+                            <line x1="12" y1="2" x2="12" y2="12"></line>
+                        </svg>
+                    </button>
+
+                    <div id="logoutMenu" class="hidden absolute bottom-full left-0 mb-3 w-56 bg-slate-800 shadow-xl rounded-2xl overflow-hidden win-slide-up opacity-0 translate-y-4 border border-slate-700">
+                        <form action="{% url 'logout' %}" method="post">
+                            {% csrf_token %}
+                            <button type="submit" class="w-full text-left px-5 py-4 text-sm font-bold text-white hover:bg-red-600 transition flex items-center justify-between group border-b border-white/10">
+                                Logout 
+                                <span class="opacity-0 group-hover:opacity-100 transition-opacity">➜</span>
+                            </button>
+                        </form>
+                        <button onclick="toggleLogoutMenu()" class="w-full text-left px-5 py-3 text-xs font-bold text-slate-400 hover:bg-white/5 hover:text-white transition">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="relative">
+                    <button id="alertBtn" onclick="toggleAlertMenu()" title="Notifications" class="relative p-2.5 inline-flex items-center rounded-full transition-all active:scale-90 outline-none hover:bg-slate-50">
+                        {% if has_notifications %}
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-500 fill-current" viewBox="0 0 24 24">
+                                <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                            </svg>
+                            <span class="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[9px] font-bold text-white ring-2 ring-white">
+                                {{ notification_count }}
+                            </span>
+                        {% else %}
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-emerald-500 fill-current" viewBox="0 0 24 24">
+                                <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                            </svg>
+                        {% endif %}
+                    </button>
+
+                    <div id="alertMenu" class="hidden absolute bottom-full right-0 mb-3 w-56 bg-white border border-slate-200 shadow-xl rounded-2xl win-slide-up opacity-0 translate-y-4 overflow-hidden">
+                        <div class="p-3 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                            <h3 class="font-bold text-slate-700 text-xs pl-2">System Alerts</h3>
+                            <button onclick="toggleAlertMenu()" class="text-slate-400 hover:text-slate-900 pr-1 text-lg">&times;</button>
+                        </div>
+                        <div class="p-2 space-y-1">
+                            <a href="{% url 'notifications' %}?type=low_stock" class="flex items-center justify-between p-3 hover:bg-blue-50 transition rounded-xl group">
+                                <span class="text-[11px] font-bold text-blue-600 group-hover:text-blue-700">Purchase Order</span>
+                                <span class="bg-blue-100 text-blue-700 text-[9px] px-2 py-0.5 rounded-full font-bold">{{ low_stock_count|default:notification_count }}</span>
+                            </a>
+                            <a href="{% url 'notifications' %}?type=expired" class="flex items-center justify-between p-3 hover:bg-red-50 transition rounded-xl group">
+                                <span class="text-[11px] font-bold text-red-600 group-hover:text-red-700">Disposal List</span>
+                                <span class="bg-red-100 text-red-700 text-[9px] px-2 py-0.5 rounded-full font-bold">{{ expiring_count|default:"!" }}</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
             </div>
         </aside>
 
         <main class="flex-1 overflow-y-auto relative">
-            <header class="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-slate-200 px-8 py-4 flex justify-between items-center">
-                <h2 class="text-xl font-semibold text-slate-800">Business Analytics</h2>
-                <div class="flex items-center space-x-4">
-                    <span class="bg-red-100 text-red-600 px-3 py-1 rounded-full text-xs font-bold">
-                        {{ active_loans }} Active Loans
-                    </span>
-                    <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">A</div>
-                </div>
-            </header>
-
             {% block content %}
             <div class="p-8">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                        <p class="text-sm text-slate-500 font-medium mb-1">Daily Revenue</p>
-                        <h4 class="text-2xl font-bold text-slate-900">Tsh   {{ daily_revenue|floatformat:2 }}</h4>
-                        <div class="mt-2 text-xs text-slate-400">Updated just now</div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+                    <div class="bg-white p-5 border border-slate-200 shadow-sm">
+                        <p class="text-xs text-slate-500 font-bold uppercase tracking-wide mb-1">Daily Revenue</p>
+                        <h4 class="text-xl font-bold text-slate-900">Tsh {{ daily_revenue|floatformat:2|intcomma }}</h4>
                     </div>
-
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                        <p class="text-sm text-slate-500 font-medium mb-1">Monthly Sales</p>
-                        <h4 class="text-2xl font-bold text-slate-900">Tsh  {{ monthly_revenue|floatformat:2 }}</h4>
-                        <div class="mt-2 text-xs text-green-500 font-bold">Current month</div>
+                    <div class="bg-emerald-50 p-5 border border-emerald-200">
+                        <p class="text-xs text-emerald-600 font-bold uppercase tracking-wide mb-1">Today's Profit</p>
+                        <h4 class="text-xl font-bold text-emerald-700">Tsh {{ daily_profit|floatformat:2|intcomma }}</h4>
                     </div>
-
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                        <p class="text-sm text-slate-500 font-medium mb-1">Most Moving Product</p>
-                        <h4 class="text-lg font-bold text-blue-600 truncate">{{ most_moving.product__name|default:"No Data" }}</h4>
-                        <div class="mt-2 text-xs text-slate-400">{{ most_moving.total_sold|default:0 }} Units Sold</div>
-                    </div>
-
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                        <p class="text-sm text-slate-500 font-medium mb-1">Highest Profit Margin</p>
-                        <h4 class="text-lg font-bold text-emerald-600 truncate">{{ most_profitable.name|default:"No Data" }}</h4>
-                        <div class="mt-2 text-xs text-slate-400">Tsh   {{ most_profitable.profit_per_unit|floatformat:2 }} per unit</div>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div class="lg:col-span-2 bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
-                        <h3 class="text-lg font-bold text-slate-800 mb-6">Revenue Performance (Last 7 Days)</h3>
-                        <canvas id="revenueChart" class="w-full" height="300"></canvas>
-                    </div>
-
-                    <div class="bg-blue-600 p-8 rounded-2xl shadow-lg text-white">
-                        <h3 class="text-xl font-bold mb-6">Insights & Tips</h3>
-                        <div class="space-y-6">
-                            <div class="bg-white/10 p-4 rounded-xl">
-                                <p class="text-blue-100 text-xs mb-1 uppercase tracking-wider font-bold">Inventory Alert</p>
-                                <p class="text-sm">3 products are reaching minimum threshold. Review purchases soon.</p>
-                            </div>
-                            <div class="bg-white/10 p-4 rounded-xl">
-                                <p class="text-blue-100 text-xs mb-1 uppercase tracking-wider font-bold">Loan Risk</p>
-                                <p class="text-sm">Loan balance has increased by 12% this week. Monitor collections.</p>
+                    <div onclick="toggleExpenseModal()" class="bg-white p-5 border border-slate-200 cursor-pointer hover:border-red-400 hover:shadow-md transition-all group">
+                        <div class="flex items-center justify-between mb-3">
+                            <p class="text-xs text-red-600 font-bold uppercase tracking-widest group-hover:text-red-600 transition-colors">Today's Expenses</p>
+                            <div class="p-1 bg-red-50 rounded text-red-500 group-hover:bg-red-600 group-hover:text-white transition-all">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
                             </div>
                         </div>
-                        <button class="mt-8 w-full bg-white text-blue-600 font-bold py-3 rounded-xl hover:bg-blue-50 transition">
-                            Generate Full Report
-                        </button>
+                        <div>
+                            <h4 class="text-xl font-bold text-red-600">Tsh {{ today_expenses|floatformat:2|intcomma }}</h4>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 border border-slate-200 shadow-sm">
+                        <p class="text-xs text-slate-500 font-bold uppercase tracking-wide mb-1">Today's Net Profit</p>
+                        <h4 class="text-xl font-bold {% if net_profit >= 0 %}text-emerald-600{% else %}text-red-600{% endif %}">
+                            Tsh {{ net_profit|floatformat:2|intcomma }}
+                        </h4>
+                        <div class="text-[10px] text-slate-400">Profit - Today's Expenses</div>
+                    </div>
+                   <div onclick="toggleTopMoversModal()" class="bg-white p-5 border border-slate-200 cursor-pointer hover:border-blue-400 hover:shadow-md transition-all group">
+    <div class="flex items-center gap-2 mb-1">
+        <p class="text-xs text-slate-500 font-bold uppercase tracking-wide group-hover:text-blue-600 transition-colors">Movement Analysis</p>
+        <div class="p-1.5 bg-blue-50 rounded-full text-blue-500 group-hover:bg-blue-600 group-hover:text-white transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+</svg>
+        </div>
+    </div>
+    <div>
+        <h4 class="text-md font-bold text-blue-600 truncate">{{ most_moving.product__name|default:"No Sales Today" }}</h4>
+        <div class="text-[10px] text-slate-400">{{ most_moving.total_sold|default:0 }} Units Sold Total</div>
+    </div>
+</div>
+
+<div id="topMoversModal" class="fixed inset-0 z-[100] flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300">
+    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="toggleTopMoversModal()"></div>
+    
+    <div class="relative bg-white w-11/12 max-w-4xl mx-auto rounded-xl shadow-2xl overflow-hidden border border-slate-200 transform scale-95 transition-transform duration-300" id="topMoversContent">
+        <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+            <div>
+                <h3 class="text-xl font-bold text-slate-800 uppercase tracking-tight">Movement Analysis</h3>
+                <p class="text-xs text-slate-500 font-medium">Comparison of high and low velocity inventory items</p>
+            </div>
+            <button onclick="toggleTopMoversModal()" class="text-slate-400 hover:text-slate-600 transition-colors text-3xl font-light">&times;</button>
+        </div>
+        
+        <div class="p-6 grid md:grid-cols-2 gap-10">
+            <div class="space-y-4">
+                <div class="flex items-center justify-between border-b-2 border-blue-500 pb-2">
+                    <h4 class="text-xs font-black text-blue-600 uppercase tracking-widest font-mono">Top 5 Fast Moving</h4>
+                    <span class="px-2 py-0.5 bg-blue-50 text-[10px] text-blue-600 font-bold rounded uppercase">High Demand</span>
+                </div>
+                <table class="w-full text-left text-sm">
+                    <thead>
+                        <tr class="text-slate-400 border-b border-slate-50">
+                            <th class="py-2 font-bold uppercase text-[10px]">Product Description</th>
+                            <th class="py-2 text-right font-bold uppercase text-[10px]">Qty Sold</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for item in top_movers %}
+                        <tr class="group hover:bg-blue-50/50 transition-colors">
+                            <td class="py-3 text-slate-700 font-semibold group-hover:text-blue-700">{{ item.product__name }}</td>
+                            <td class="py-3 text-right">
+                                <span class="inline-block px-2.5 py-1 bg-blue-100 text-blue-700 font-black rounded-md min-w-[40px] text-center">
+                                    {{ item.total_sold|floatformat:0 }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="2" class="py-8 text-center text-slate-400 italic text-xs">No sales data available.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="space-y-4">
+                <div class="flex items-center justify-between border-b-2 border-rose-500 pb-2">
+                    <h4 class="text-xs font-black text-rose-600 uppercase tracking-widest font-mono">Top 5 Least Moving</h4>
+                    <span class="px-2 py-0.5 bg-rose-50 text-[10px] text-rose-600 font-bold rounded uppercase">Low Demand</span>
+                </div>
+                <table class="w-full text-left text-sm">
+                    <thead>
+                        <tr class="text-slate-400 border-b border-slate-50">
+                            <th class="py-2 font-bold uppercase text-[10px]">Product Description</th>
+                            <th class="py-2 text-right font-bold uppercase text-[10px]">Qty Sold</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for item in least_movers %}
+                        <tr class="group hover:bg-rose-50/50 transition-colors">
+                            <td class="py-3 text-slate-700 font-semibold group-hover:text-rose-700">{{ item.product__name }}</td>
+                            <td class="py-3 text-right">
+                                <span class="inline-block px-2.5 py-1 bg-rose-100 text-rose-700 font-black rounded-md min-w-[40px] text-center">
+                                    {{ item.total_sold|floatformat:0 }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="2" class="py-8 text-center text-slate-400 italic text-xs">No sales data available.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
+            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-widest font-mono">System Insights</span>
+            <button onclick="toggleTopMoversModal()" class="px-8 py-2 bg-slate-800 text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-slate-700 shadow-lg shadow-slate-200 transition-all active:scale-95">
+                Close Analysis
+            </button>
+        </div>
+    </div>
+</div>
+                    
+                </div>
+
+                <div class="bg-white p-6 border border-slate-200 shadow-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold text-slate-800">Weekly Performance</h3>
+                        <div class="flex gap-4 text-xs font-medium">
+                            <span class="flex items-center gap-1"><span class="w-3 h-3 bg-red-500"></span> Expenses</span>
+                            <span class="flex items-center gap-1"><span class="w-3 h-3 bg-emerald-500"></span> Profit</span>
+                        </div>
+                    </div>
+                    <div class="h-72 w-full">
+                        <canvas id="comboChart"></canvas>
                     </div>
                 </div>
             </div>
 
-            <script>
-                const ctx = document.getElementById('revenueChart').getContext('2d');
-                const labels = {{ graph_labels|safe }};
-                const data = {{ graph_data|safe }};
+            {{ graph_labels|json_script:"graph-labels" }}
+            {{ expense_data|json_script:"expense-data" }}
+            {{ profit_data|json_script:"profit-data" }}
 
+            <script>
+                const labels = JSON.parse(document.getElementById('graph-labels').textContent);
+                const expenseData = JSON.parse(document.getElementById('expense-data').textContent);
+                const profitData = JSON.parse(document.getElementById('profit-data').textContent);
+                const ctx = document.getElementById('comboChart').getContext('2d');
+                
                 new Chart(ctx, {
-                    type: 'line',
+                    type: 'bar',
                     data: {
                         labels: labels,
-                        datasets: [{
-                            label: 'Revenue (Tsh   )',
-                            data: data,
-                            borderColor: '#2563eb',
-                            backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                            borderWidth: 3,
-                            fill: true,
-                            tension: 0.4,
-                            pointRadius: 4,
-                            pointBackgroundColor: '#2563eb'
-                        }]
+                        datasets: [
+                            { type: 'line', label: 'Net Profit', data: profitData, borderColor: '#10b981', backgroundColor: '#10b981', borderWidth: 3, tension: 0.3, pointRadius: 4, yAxisID: 'y' },
+                            { type: 'bar', label: 'Total Expenses', data: expenseData, backgroundColor: 'rgba(239, 68, 68, 0.2)', borderColor: '#ef4444', borderWidth: 1, yAxisID: 'y' }
+                        ]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: { legend: { display: false } },
                         scales: {
-                            y: { beginAtZero: true, grid: { borderDash: [5, 5], color: '#e2e8f0' }, ticks: { color: '#64748b' } },
-                            x: { grid: { display: false }, ticks: { color: '#64748b' } }
+                            x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+                            y: { beginAtZero: true, grid: { borderDash: [4, 4], color: '#f1f5f9' }, ticks: { font: { size: 10 } } }
                         }
                     }
                 });
             </script>
-            {% endblock %}
-            </main>
+
+            <div id="topMoversModal" class="hidden fixed inset-0 z-[120] modal-overlay flex items-center justify-center p-4">
+                <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden transform transition-all scale-100 opacity-100" id="moversContainer">
+                    
+                    <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-800">🏆 Best Moving Products</h3>
+                            <p class="text-xs text-slate-500">Top 5 highest moving items</p>
+                        </div>
+                        <button onclick="toggleTopMoversModal()" class="p-2 hover:bg-slate-200 rounded-full text-slate-400 hover:text-slate-600 transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="p-2 max-h-[60vh] overflow-y-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-white sticky top-0">
+                                <tr>
+                                    <th class="px-4 py-2 text-xs font-bold text-slate-400 uppercase w-12 text-center">Rank</th>
+                                    <th class="px-4 py-2 text-xs font-bold text-slate-400 uppercase">Product Name</th>
+                                    <th class="px-4 py-2 text-xs font-bold text-slate-400 uppercase text-right">Volume</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-50">
+                                {% for item in top_movers %}
+                                <tr class="hover:bg-blue-50/50 transition-colors">
+                                    <td class="px-4 py-3 text-center">
+                                        {% if forloop.counter == 1 %}
+                                            <span class="w-6 h-6 flex items-center justify-center bg-yellow-100 text-yellow-700 rounded-full text-xs font-bold mx-auto">1</span>
+                                        {% elif forloop.counter == 2 %}
+                                            <span class="w-6 h-6 flex items-center justify-center bg-slate-100 text-slate-600 rounded-full text-xs font-bold mx-auto">2</span>
+                                        {% elif forloop.counter == 3 %}
+                                            <span class="w-6 h-6 flex items-center justify-center bg-orange-50 text-orange-700 rounded-full text-xs font-bold mx-auto">3</span>
+                                        {% else %}
+                                            <span class="text-slate-400 text-xs font-bold">#{{ forloop.counter }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="text-sm font-bold text-slate-800 break-words leading-tight">
+                                            {{ item.product__name }}
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3 text-right">
+                                        <span class="inline-block px-2.5 py-1 bg-blue-600 text-white text-xs font-bold rounded-lg shadow-sm shadow-blue-200">
+                                            {{ item.total }} <span class="font-normal opacity-75 text-[10px]">units</span>
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="px-6 py-8 text-center text-slate-400 italic">
+                                        No sales data recorded yet.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="bg-slate-50 px-6 py-3 border-t border-slate-100 text-right">
+                        <button onclick="toggleTopMoversModal()" class="text-sm font-bold text-blue-600 hover:text-blue-800 transition">Close</button>
+                    </div>
+                </div>
+            </div>
+            <div id="expenseDetailModal" class="fixed inset-0 z-[100] flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300">
+    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="toggleExpenseModal()"></div>
+    
+    <div class="relative bg-white w-11/12 max-w-2xl mx-auto rounded-xl shadow-2xl overflow-hidden border border-slate-200 transform scale-95 transition-transform duration-300" id="expenseModalContent">
+        <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+            <div>
+                <h3 class="text-xl font-bold text-slate-800 uppercase tracking-tight">Expense Breakdown</h3>
+                <p class="text-xs text-slate-500 font-medium">All recorded costs for today</p>
+            </div>
+            <button onclick="toggleExpenseModal()" class="text-slate-400 hover:text-slate-600 transition-colors text-3xl font-light">&times;</button>
+        </div>
+        
+        <div class="p-6">
+            <div class="space-y-4">
+                <div class="flex items-center justify-between border-b-2 border-red-500 pb-2">
+                    <h4 class="text-xs font-black text-red-600 uppercase tracking-widest font-mono">Today's Entries</h4>
+                    <span class="px-2 py-0.5 bg-red-50 text-[11px] text-red-600 font-bold rounded uppercase">Total: Tsh {{ today_expenses|intcomma }}</span>
+                </div>
+                <table class="w-full text-left text-sm">
+                    <thead>
+                        <tr class="text-slate-400 border-b border-slate-50">
+                            <th class="py-2 font-bold uppercase text-[10px]">Description</th>
+                            <th class="py-2 text-right font-bold uppercase text-[10px]">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for exp in todays_expense_list %}
+                        <tr class="group hover:bg-red-50/50 transition-colors">
+                            <td class="py-3 text-slate-700 font-semibold">{{ exp.description }}</td>
+                            <td class="py-3 text-right font-bold text-red-600">Tsh {{ exp.amount|intcomma }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="2" class="py-8 text-center text-slate-400 italic font-mono text-xs">No expenses recorded for today.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end items-center">
+            <button onclick="toggleExpenseModal()" class="px-8 py-2 bg-slate-800 text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-slate-700 shadow-lg transition-all active:scale-95">
+                Close
+            </button>
+        </div>
     </div>
+</div>
+
+
+
+            {% endblock %}
+        </main>
+    </div>
+<script>
+    function toggleExpenseModal() {
+        const modal = document.getElementById('expenseDetailModal');
+        const content = document.getElementById('expenseModalContent');
+        
+        if (modal.classList.contains('opacity-0')) {
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            content.classList.remove('scale-95');
+            content.classList.add('scale-100');
+            document.body.style.overflow = 'hidden';
+        } else {
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            content.classList.remove('scale-100');
+            content.classList.add('scale-95');
+            document.body.style.overflow = 'auto';
+        }
+    }
+</script>
+    <script>
+        // TOGGLE TOP MOVERS MODAL
+        function toggleTopMoversModal() {
+            const modal = document.getElementById('topMoversModal');
+            const container = document.getElementById('moversContainer');
+            
+            if (modal.classList.contains('hidden')) {
+                // Open
+                modal.classList.remove('hidden');
+                // Small delay to allow display:block to apply before opacity transition
+                setTimeout(() => {
+                    container.classList.remove('scale-95', 'opacity-0');
+                    container.classList.add('scale-100', 'opacity-100');
+                }, 10);
+            } else {
+                // Close
+                container.classList.remove('scale-100', 'opacity-100');
+                container.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 200); // Wait for transition to finish
+            }
+        }
+
+        // TOGGLE LOGOUT MENU
+        function toggleLogoutMenu() {
+            const menu = document.getElementById('logoutMenu');
+            const btn = document.getElementById('powerBtn');
+            const alertMenu = document.getElementById('alertMenu');
+            
+            if (!alertMenu.classList.contains('hidden')) toggleAlertMenu(); // Close other menus
+
+            if (menu.classList.contains('hidden')) {
+                menu.classList.remove('hidden');
+                setTimeout(() => {
+                    menu.classList.remove('opacity-0', 'translate-y-4');
+                    menu.classList.add('opacity-100', 'translate-y-0');
+                    btn.classList.add('text-red-600', 'bg-red-50');
+                }, 10);
+            } else {
+                menu.classList.remove('opacity-100', 'translate-y-0');
+                menu.classList.add('opacity-0', 'translate-y-4');
+                btn.classList.remove('text-red-600', 'bg-red-50');
+                setTimeout(() => menu.classList.add('hidden'), 200);
+            }
+        }
+
+        // TOGGLE ALERT MENU (SAME ANIMATION AS POWER)
+        function toggleAlertMenu() {
+            const menu = document.getElementById('alertMenu');
+            const btn = document.getElementById('alertBtn');
+            const logoutMenu = document.getElementById('logoutMenu');
+
+            if (!logoutMenu.classList.contains('hidden')) toggleLogoutMenu(); // Close other menus
+
+            if (menu.classList.contains('hidden')) {
+                menu.classList.remove('hidden');
+                setTimeout(() => {
+                    menu.classList.remove('opacity-0', 'translate-y-4');
+                    menu.classList.add('opacity-100', 'translate-y-0');
+                    btn.classList.add('bg-slate-100');
+                }, 10);
+            } else {
+                menu.classList.remove('opacity-100', 'translate-y-0');
+                menu.classList.add('opacity-0', 'translate-y-4');
+                btn.classList.remove('bg-slate-100');
+                setTimeout(() => menu.classList.add('hidden'), 200);
+            }
+        }
+
+        // Close menus if clicking anywhere else
+        window.onclick = function(event) {
+            if (!event.target.closest('#powerBtn') && !event.target.closest('#logoutMenu')) {
+                const menu = document.getElementById('logoutMenu');
+                if (!menu.classList.contains('hidden')) toggleLogoutMenu();
+            }
+            if (!event.target.closest('#alertBtn') && !event.target.closest('#alertMenu')) {
+                const menu = document.getElementById('alertMenu');
+                if (!menu.classList.contains('hidden')) toggleAlertMenu();
+            }
+            // Close modal if clicking outside container
+            if (event.target.id === 'topMoversModal') {
+                toggleTopMoversModal();
+            }
+        }
+    </script>
+    <script>
+    function toggleTopMoversModal() {
+        const modal = document.getElementById('topMoversModal');
+        const content = document.getElementById('topMoversContent');
+        
+        if (modal.classList.contains('opacity-0')) {
+            // Open Modal
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            content.classList.remove('scale-95');
+            content.classList.add('scale-100');
+            document.body.style.overflow = 'hidden';
+        } else {
+            // Close Modal
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            content.classList.remove('scale-100');
+            content.classList.add('scale-95');
+            document.body.style.overflow = 'auto';
+        }
+    }
+</script>
 </body>
 </html>

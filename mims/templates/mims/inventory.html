@@ -1,29 +1,29 @@
 {% extends 'mims/dashboard.html' %}
-
+{% load humanize%}
 {% block content %}
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
 <style>
-    /* Excel-style readability tweaks */
-    .excel-table {
-        border: 1px solid #e2e8f0;
+    .excel-table { border: 1px solid #e2e8f0; }
+    .excel-table th { background-color: #f8fafc; border-bottom: 2px solid #cbd5e1; border-right: 1px solid #e2e8f0; font-size: 0.75rem; letter-spacing: 0.05em; }
+    .excel-table td { border-right: 1px solid #f1f5f9; padding: 8px 12px !important; font-size: 0.875rem; }
+    .excel-table tr:nth-child(even) { background-color: #fbfcfd; }
+    .excel-table tr:hover { background-color: #f1f5f9 !important; }
+    
+    .modal { transition: opacity 0.25s ease; z-index: 50; }
+    body.modal-active { overflow-x: hidden; overflow-y: hidden !important; }
+
+    .valuation-modal-container {
+        width: 75vw;
+        max-height: 80vh;
     }
-    .excel-table th {
-        background-color: #f8fafc;
-        border-bottom: 2px solid #cbd5e1;
-        border-right: 1px solid #e2e8f0;
-        font-size: 0.75rem;
-        letter-spacing: 0.05em;
+
+    /* Barcode reader styling */
+    #reader {
+        border-radius: 8px;
+        overflow: hidden;
     }
-    .excel-table td {
-        border-right: 1px solid #f1f5f9;
-        padding: 8px 12px !important; /* Tighter padding for Excel feel */
-        font-size: 0.875rem;
-    }
-    .excel-table tr:nth-child(even) {
-        background-color: #fbfcfd; /* Subtle zebra striping */
-    }
-    .excel-table tr:hover {
-        background-color: #f1f5f9 !important;
-    }
+
     @media print {
         aside, .no-print { display: none !important; }
         main { width: 100%; padding: 0; }
@@ -32,32 +32,73 @@
 </style>
 
 <div class="p-8">
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <div>
-            <h2 class="text-2xl font-bold text-slate-800">Product Inventory</h2>
-            <p class="text-sm text-slate-500">Total items tracked: {{ inventory|length }}</p>
+    {% if messages %}
+    <div class="mb-4 no-print">
+        {% for message in messages %}
+        <div class="p-4 rounded-lg {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+            {{ message }}
         </div>
-        
-        <div class="flex items-center gap-3 no-print">
-            <button onclick="window.print()" class="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-600 shadow-sm" title="Print Inventory">
-                <span>🖨️ Print</span>
-            </button>
-            <a href="/admin/mims/product/add/" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 shadow-md">
-                + New Product
-            </a>
-        </div>
+        {% endfor %}
     </div>
+    {% endif %}
+
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+    <div>
+        <h2 class="text-2xl font-bold text-slate-800">Product Inventory</h2>
+        <p class="text-sm text-slate-500">Total items tracked: {{ inventory|length }}</p>
+    </div>
+    
+    <div class="flex flex-wrap items-center gap-3 no-print">
+        <div onclick="toggleValuationModal()" class="bg-white px-4 py-1.5 rounded-lg border border-slate-200 shadow-sm flex items-center gap-3 cursor-pointer hover:bg-slate-50 transition">
+            <div class="p-1.5 bg-emerald-50 rounded-full text-emerald-600 text-sm">💰</div>
+            <div>
+                <p class="text-[10px] text-slate-500 font-bold uppercase leading-tight">Total  Stock Value</p>
+                <h3 class="text-sm font-bold text-slate-800">Tsh {{ total_valuation }}</h3>
+            </div>
+        </div>
+
+        <div class="relative">
+            <button onclick="toggleImportMenu()" class="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-600 shadow-sm flex items-center gap-2 h-full">
+                <span>Import Stock</span>
+                <span class="text-xs">▼</span>
+            </button>
+            <div id="importDropdown" class="hidden absolute top-full right-0 mt-2 w-48 bg-white border border-slate-200 rounded-lg shadow-xl z-50 overflow-hidden">
+                <a href="?download_template=true" class="block px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 border-b border-slate-100">Download Template</a>
+                <button onclick="document.getElementById('csvFileInput').click(); toggleImportMenu()" class="block w-full text-left px-4 py-3 text-sm text-slate-700 hover:bg-slate-50">Upload CSV File</button>
+            </div>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" id="importForm" class="hidden">
+            {% csrf_token %}
+            <input type="file" name="csv_file" id="csvFileInput" accept=".csv" onchange="document.getElementById('importForm').submit()">
+        </form>
+
+        <button onclick="window.print()" class="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-600 shadow-sm flex items-center justify-center h-full min-w-[42px]" title="Print">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+        </button>
+
+        <a href="{% url 'create_sale' %}" class="bg-emerald-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-emerald-700 shadow-md flex items-center gap-2 h-full">
+            <span>+ New Sale</span>
+        </a>
+
+        <button onclick="toggleModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 shadow-md h-full">
+            + New Product
+        </button>
+    </div>
+</div>
 
     <div class="bg-white p-4 rounded-t-2xl border border-slate-200 border-b-0 flex flex-wrap gap-4 items-center no-print">
-        <div class="relative flex-1 min-w-[300px]">
-            <span class="absolute left-3 top-2.5 text-slate-400">🔍</span>
-            <input type="text" id="inventorySearch" placeholder="Search product name, category..." 
-                class="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+    <div class="relative flex-1 min-w-[300px]">
+        <div class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
         </div>
-        
-        <button class="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
-            <span>⚙️ Filter</span>
-        </button>
+        <input type="text" id="inventorySearch" placeholder="Search product name, category..." 
+            class="w-full pl-12 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+    </div>
     </div>
 
     <div class="bg-white rounded-b-2xl shadow-sm overflow-hidden excel-table">
@@ -67,8 +108,10 @@
                     <th class="px-6 py-3 text-slate-600 uppercase">Product Name</th>
                     <th class="px-6 py-3 text-slate-600 uppercase">Category</th>
                     <th class="px-6 py-3 text-slate-600 uppercase">Current Stock</th>
-                    <th class="px-6 py-3 text-slate-600 uppercase">Retail Price</th>
-                    <th class="px-6 py-3 text-slate-600 uppercase">Stock Value</th>
+                    <th class="px-6 py-3 text-slate-600 uppercase">Buying Price</th>
+                    <th class="px-6 py-3 text-slate-600 uppercase">Selling Price</th>
+                    <th class="px-6 py-3 text-slate-600 uppercase">Expiry Date</th>
+                    <th class="px-6 py-3 text-slate-600 uppercase no-print text-center">Action</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
@@ -76,18 +119,26 @@
                 <tr>
                     <td class="font-medium text-slate-800">{{ entry.item.name }}</td>
                     <td class="text-slate-500">{{ entry.item.category.name }}</td>
-                    <td>
+                    
+                    <td class="align-top py-3">
                         <span class="{% if entry.is_low_stock %}text-red-600 font-bold{% else %}text-slate-800{% endif %}">
-                            {{ entry.item.stock_qty }} {{ entry.item.base_unit }}s
+                            {{ entry.item.stock_qty|intcomma|floatformat:"-2" }} 
+                            {% if entry.item.bulk_unit == 'Box' %}Boxes{% else %}{{ entry.item.bulk_unit }}s{% endif %}
                         </span>
-                        <span class="text-[10px] text-slate-400 block italic">({{ entry.item.conversion_factor }} per {{ entry.item.bulk_unit }})</span>
+
+                        <span class="text-[11px] text-slate-500 block font-medium mt-1">
+                            ({{ entry.total_pieces|intcomma|floatformat:0 }} {{ entry.item.base_unit }}s)
+                        </span>
                     </td>
-                    <td class="font-mono text-slate-700">Tsh {{ entry.item.sell_price_per_base }}</td>
-                    <td class="font-mono text-slate-900 font-semibold">Tsh {{ entry.stock_value|floatformat:0 }}</td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="5" class="px-6 py-10 text-center text-slate-400 italic">No products found in inventory.</td>
+
+                    <td class="font-mono text-slate-700">Tsh {{ entry.item.buy_price_per_bulk|floatformat:2|intcomma }}</td>
+                    <td class="font-mono text-slate-700">Tsh {{ entry.retail_price_display }}</td>
+                    <td class="font-mono text-slate-900">{{ entry.item.expiry_date|date|default:"N/A" }}</td>
+                    <td class="text-center no-print">
+                        <a href="{% url 'edit_product' entry.item.id %}" class="text-blue-600 hover:text-blue-800 font-bold px-2 py-1 rounded hover:bg-blue-50 transition">
+                            Edit
+                        </a>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -95,36 +146,248 @@
     </div>
 </div>
 
+<div id="valuationModal" class="modal fixed w-full h-full top-0 left-0 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+    <div class="absolute w-full h-full bg-slate-900 opacity-50" onclick="toggleValuationModal()"></div>
+    <div class="valuation-modal-container bg-white mx-auto rounded-xl shadow-2xl z-50 flex flex-col">
+        <div class="flex justify-between items-center p-6 border-b border-slate-100">
+            <div>
+                <h3 class="text-xl font-bold text-slate-800">Detailed Stock Valuation</h3>
+                <p class="text-sm text-slate-500">Total System Value: Tsh {{ total_valuation }}</p>
+            </div>
+            <button onclick="toggleValuationModal()" class="text-slate-400 hover:text-slate-600 text-2xl">&times;</button>
+        </div>
+                <div class="flex flex-col flex-1 overflow-hidden">
+            <div class="px-6 bg-slate-50 border-b border-slate-200">
+                <table class="w-full text-left table-fixed">
+                    <thead>
+                        <tr>
+                            <th class="py-3 text-xs font-bold text-slate-500 uppercase">Product</th>
+                            <th class="py-3 text-xs font-bold text-slate-500 uppercase w-1/3">Stock Quantity</th>
+                            <th class="py-3 text-xs font-bold text-slate-500 uppercase text-right w-1/4">Value</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+
+            <div class="p-6 pt-0 overflow-y-auto flex-1">
+                <table class="w-full text-left table-fixed">
+                    <tbody class="divide-y divide-slate-100">
+                        {% for entry in inventory %}
+                        <tr class="hover:bg-slate-50">
+                            <td class="py-3 text-sm text-slate-800">{{ entry.item.name }}</td>
+                            <td class="py-3 text-sm text-slate-600 w-1/3">{{ entry.stock_qty_display }} Boxes</td>
+                            <td class="py-3 text-sm font-bold text-slate-900 text-right w-1/4">Tsh {{ entry.stock_value_display }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="p-6 border-t border-slate-100 flex justify-end">
+            <button onclick="toggleValuationModal()" class="bg-slate-800 text-white px-6 py-2 rounded-lg font-bold">Close</button>
+        </div>
+    </div>
+</div>
+
+<div id="productModal" class="modal fixed w-full h-full top-0 left-0 flex items-center justify-center opacity-0 pointer-events-none">
+    <div class="absolute w-full h-full bg-slate-900 opacity-50" onclick="toggleModal()"></div>
+    <div class="bg-white w-11/12 md:max-w-xl mx-auto rounded shadow-lg z-50 overflow-y-auto">
+        <div class="py-4 text-left px-6">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                <p class="text-xl font-bold text-slate-800">Add New Product</p>
+                <button onclick="toggleModal()" class="text-slate-400 hover:text-slate-600 text-2xl">&times;</button>
+            </div>
+
+            <form method="POST" class="mt-4 grid grid-cols-2 gap-4" id="newProductForm">
+                {% csrf_token %}
+                <input type="hidden" name="add_product" value="1">
+                
+                <div class="col-span-2">
+                    <div id="reader" class="hidden w-full bg-black mb-4"></div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase">Barcode</label>
+                    <div class="flex gap-2 mt-1">
+                        <input type="text" name="barcode" id="barcodeInput" placeholder="Scan or type barcode..." class="w-full p-2 border border-slate-200 rounded outline-none focus:ring-2 focus:ring-blue-500">
+                        <button type="button" id="startScanBtn" class="bg-slate-800 text-white px-3 rounded hover:bg-slate-700 font-bold whitespace-nowrap">Scan</button>
+                    </div>
+                </div>
+
+                <div class="col-span-2">
+                    <label class="block text-xs font-bold text-slate-500 uppercase">Product Name</label>
+                    <input type="text" name="name" id="productNameInput" list="existingProducts" required class="w-full p-2 border border-slate-200 rounded mt-1 outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase">Category</label>
+                    <select name="category" id="productCategoryInput" class="w-full p-2 border border-slate-200 rounded mt-1 outline-none">
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}">{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase">Stock (Boxes)</label>
+                    <input type="number" step="0.01" name="stock_qty" value="0" class="w-full p-2 border border-slate-200 rounded mt-1 outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase">Bulk Unit (e.g., Box)</label>
+                    <input type="text" name="bulk_unit" id="productBulkInput" value="Box" required class="w-full p-2 border border-slate-200 rounded mt-1 outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase">Base Unit (e.g., Piece)</label>
+                    <input type="text" name="base_unit" id="productBaseInput" value="Piece" required class="w-full p-2 border border-slate-200 rounded mt-1 outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase">Items per Box</label>
+                    <input type="number" name="conversion_factor" id="productConvInput" value="1" required class="w-full p-2 border border-slate-200 rounded mt-1 outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase">Buying Price (Unit)</label>
+                    <input type="number" step="0.01" name="buy_price" id="buyPriceInput" required class="w-full p-2 border border-slate-200 rounded mt-1 outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase">Selling Price (Unit)</label>
+                    <input type="number" step="0.01" name="sell_price" id="sellPriceInput" required class="w-full p-2 border border-slate-200 rounded mt-1 outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase">Expiry Date</label>
+                    <input type="date" name="expiry_date" required class="w-full p-2 border border-slate-200 rounded mt-1 outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div class="col-span-2 flex justify-end gap-3 pt-4 border-t border-slate-100">
+                    <button type="button" onclick="toggleModal()" class="px-4 py-2 bg-slate-100 text-slate-600 rounded hover:bg-slate-200">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 shadow-md">Save Product</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<datalist id="existingProducts">
+    {% for entry in inventory %}
+    <option value="{{ entry.item.name }}" 
+            data-cat="{{ entry.item.category.id }}" 
+            data-bulk="{{ entry.item.bulk_unit }}" 
+            data-base="{{ entry.item.base_unit }}"
+            data-conv="{{ entry.item.conversion_factor }}">
+    {% endfor %}
+</datalist>
+
 <script>
-    // Optimized Search with Debouncing
-    function debounce(func, wait) {
-        let timeout;
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func(...args);
-            };
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-        };
+    // 2. Barcode Scanner and Lookup Logic
+    const html5QrCode = new Html5Qrcode("reader");
+    const scanBtn = document.getElementById('startScanBtn');
+    let isScanning = false;
+
+    const onScanSuccess = (decodedText) => {
+        document.getElementById('barcodeInput').value = decodedText;
+        
+        // Fetch product details from your internal lookup endpoint
+        fetch(`/barcode-lookup/?barcode=${decodedText}`)
+            .then(res => res.json())
+            .then(json => {
+                if (json.status === 'success') {
+                    document.getElementById('productNameInput').value = json.data.name;
+                    document.getElementById('productCategoryInput').value = json.data.category;
+                    document.getElementById('productBulkInput').value = json.data.bulk_unit;
+                    document.getElementById('productBaseInput').value = json.data.base_unit;
+                    document.getElementById('productConvInput').value = json.data.conv;
+                    document.getElementById('buyPriceInput').value = json.data.buy;
+                    document.getElementById('sellPriceInput').value = json.data.sell;
+                    
+                    alert("Product found: " + json.data.name + ". Stock will be updated.");
+                } else {
+                    console.log("New barcode scanned.");
+                }
+            })
+            .catch(err => console.error("Lookup error:", err));
+
+        stopScanning();
+    };
+
+    scanBtn.addEventListener('click', () => {
+        const readerDiv = document.getElementById('reader');
+        if (!isScanning) {
+            readerDiv.classList.remove('hidden');
+            scanBtn.innerText = "Stop";
+            scanBtn.classList.replace('bg-slate-800', 'bg-red-600');
+            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, onScanSuccess);
+            isScanning = true;
+        } else {
+            stopScanning();
+        }
+    });
+
+    function stopScanning() {
+        if(isScanning) {
+            html5QrCode.stop().then(() => {
+                document.getElementById('reader').classList.add('hidden');
+                scanBtn.innerText = "Scan";
+                scanBtn.classList.replace('bg-red-600', 'bg-slate-800');
+                isScanning = false;
+            });
+        }
     }
 
-    const performSearch = debounce(function() {
-        let filter = document.getElementById('inventorySearch').value.toUpperCase();
-        let rows = document.querySelector("#inventoryTable tbody").rows;
-        
-        for (let i = 0; i < rows.length; i++) {
-            let productName = rows[i].cells[0].textContent.toUpperCase();
-            let category = rows[i].cells[1].textContent.toUpperCase();
-            
-            if (productName.includes(filter) || category.includes(filter)) {
-                rows[i].style.display = "";
-            } else {
-                rows[i].style.display = "none";
-            }      
-        }
-    }, 200); // 200ms delay to improve performance
+    // PREFILL LOGIC
+    const nameInput = document.getElementById('productNameInput');
+    const existingList = document.getElementById('existingProducts');
 
+    nameInput.addEventListener('input', function() {
+        const val = this.value;
+        const options = existingList.options;
+        for (let i = 0; i < options.length; i++) {
+            if (options[i].value === val) {
+                // Match found, prefill fields
+                document.getElementById('productCategoryInput').value = options[i].getAttribute('data-cat');
+                document.getElementById('productBulkInput').value = options[i].getAttribute('data-bulk');
+                document.getElementById('productBaseInput').value = options[i].getAttribute('data-base');
+                document.getElementById('productConvInput').value = options[i].getAttribute('data-conv');
+                break;
+            }
+        }
+    });
+
+    function toggleImportMenu() {
+        document.getElementById('importDropdown').classList.toggle('hidden');
+    }
+    function toggleModal() {
+        const modal = document.getElementById('productModal');
+        modal.classList.toggle('opacity-0');
+        modal.classList.toggle('pointer-events-none');
+        document.body.classList.toggle('modal-active');
+        if (isScanning) stopScanning();
+    }
+    function toggleValuationModal() {
+        const modal = document.getElementById('valuationModal');
+        modal.classList.toggle('opacity-0');
+        modal.classList.toggle('pointer-events-none');
+        document.body.classList.toggle('modal-active');
+    }
+    window.addEventListener('click', function(e) {
+        const dropdown = document.getElementById('importDropdown');
+        if (dropdown && !e.target.closest('.relative')) { dropdown.classList.add('hidden'); }
+    });
+    const performSearch = (function() {
+        let timeout;
+        return function() {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                let filter = document.getElementById('inventorySearch').value.toUpperCase();
+                let rows = document.querySelector("#inventoryTable tbody").rows;
+                for (let i = 0; i < rows.length; i++) {
+                    let text = rows[i].cells[0].textContent.toUpperCase();
+                    rows[i].style.display = text.includes(filter) ? "" : "none";
+                }
+            }, 200);
+        };
+    })();
     document.getElementById('inventorySearch').addEventListener('keyup', performSearch);
 </script>
 {% endblock %}

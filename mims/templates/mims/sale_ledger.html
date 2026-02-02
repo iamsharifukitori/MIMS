@@ -1,0 +1,61 @@
+{% extends 'mims/dashboard.html' %}
+{% load humanize%}
+{% block content %}
+<div class="p-8">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-slate-800">Sales Ledger</h2>
+<a href="{% url 'create_sale' %}" class="bg-emerald-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-emerald-700 shadow-md flex items-center gap-2 h-full">
+    <span>+ New Sale</span>
+</a>    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <table class="w-full text-left">
+            <thead class="bg-slate-50 border-b border-slate-200">
+                <tr>
+                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Date</th>
+                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Customer</th>
+                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Total</th>
+                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Status</th>
+                    <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase text-center">Action</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                {% for sale in page_obj %}
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="px-6 py-4 text-sm text-slate-600">{{ sale.sale_date|date:"d M Y, H:i" }}</td>
+                    <td class="px-6 py-4 text-sm font-medium text-slate-800">{{ sale.customer_name|default:"Walk-in" }}</td>
+                    <td class="px-6 py-4 text-sm font-bold text-slate-900">Tsh {{ sale.total_amount|floatformat:2|intcomma }}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-2 py-1 text-[10px] font-bold rounded-full 
+                            {% if sale.payment_status == 'PAID' %}bg-green-100 text-green-700{% else %}bg-amber-100 text-amber-700{% endif %}">
+                            {{ sale.payment_status }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <a href="{% url 'view_sale' sale.id %}" class="text-blue-600 hover:text-blue-800" title="View Invoice">
+    <span class="text-xs font-semibold underline">View Sale</span>
+</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-center gap-2">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}" class="px-3 py-1 border rounded bg-white text-slate-600 hover:bg-blue-50">Previous</a>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                <a href="?page={{ num }}" class="px-3 py-1 border rounded {% if page_obj.number == num %}bg-blue-600 text-white{% else %}bg-white text-slate-600 hover:bg-blue-50{% endif %}">
+                    {{ num }}
+                </a>
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}" class="px-3 py-1 border rounded bg-white text-slate-600 hover:bg-blue-50">Next</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

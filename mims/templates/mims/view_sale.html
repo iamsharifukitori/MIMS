@@ -1,0 +1,144 @@
+{% extends 'mims/dashboard.html' %}
+{% load static %}
+
+{% block content %}
+<div class="p-4 md:p-8 flex flex-col items-center">
+    
+    <div class="w-full max-w-[80mm] md:max-w-md flex justify-between mb-6 no-print">
+        <a href="{% url 'sale_ledger' %}" class="flex items-center text-slate-500 hover:text-slate-800 font-semibold transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+            </svg>
+            Back
+        </a>
+        <button onclick="window.print()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold shadow-md hover:bg-blue-700 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+            Print
+        </button>
+    </div>
+
+    <div id="receipt" class="bg-white p-4 shadow-xl border border-slate-200 w-full max-w-[80mm] text-slate-800 font-mono text-sm leading-tight relative">
+        
+        <div class="text-center border-b-2 border-dashed border-slate-300 pb-4 mb-4">
+            <h2 class="text-xl font-black uppercase tracking-widest mb-1">MIMS</h2>
+            <p class="text-[10px] text-slate-500 uppercase font-bold">Medical Inventory System</p>
+            <p class="text-[10px] mt-1">+255 123 456 789</p>
+            <p class="text-[10px]">Tabora, Tanzania</p>
+        </div>
+
+        <div class="mb-4 text-[11px] flex justify-between items-end">
+            <div>
+                <p><span class="font-bold text-slate-500">Rcpt #:</span> {{ sale.id|stringformat:"06d" }}</p>
+                <p><span class="font-bold text-slate-500">Date:</span> {{ sale.sale_date|date:"d/m/y H:i" }}</p>
+                <p><span class="font-bold text-slate-500">Cust:</span> {{ sale.customer_name|truncatechars:15 }}</p>
+            </div>
+        </div>
+
+            <table class="w-full mb-4 text-[11px] table-fixed border-collapse">
+    <thead>
+        <tr class="border-b border-black">
+            <th class="text-left py-1 w-[50%] pr-[1.5px]">Item</th>
+            
+            <th class="text-center py-1 w-[10%] px-[1.5px] whitespace-nowrap">Qty</th>
+            
+            <th class="text-right py-1 w-[40%] pl-[1.5px] whitespace-nowrap">Amt</th>
+        </tr>
+    </thead>
+    <tbody class="divide-y divide-dotted divide-slate-300">
+        {% for item in sale_items %}
+        <tr>
+            <td class="py-2 pr-[1.5px] align-top">
+                <div class="font-bold leading-tight break-words">
+                    {{ item.product.name }}
+                </div>
+            </td>
+
+            <td class="text-center py-2 px-[1.5px] align-top font-bold whitespace-nowrap">
+                {{ item.quantity_base }}
+            </td>
+
+            <td class="text-right py-2 pl-[1.5px] align-top whitespace-nowrap">
+                <div class="text-[10px] text-slate-900 font-normal">
+                    @ {{ item.price_at_sale|floatformat:0 }}
+                </div>
+                <div class="font-bold text-slate-900">
+                    {{ item.subtotal|floatformat:0 }}
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+        <div class="border-t-2 border-black pt-2 mb-4">
+            <div class="flex justify-between text-lg font-black mb-1">
+                <span>TOTAL</span>
+                <span>{{ sale.total_amount|floatformat:0 }}</span>
+            </div>
+
+            {% if sale.balance_due > 0 %}
+            <div class="flex justify-between text-sm font-bold text-red-600">
+                <span>BALANCE DUE:</span>
+                <span>{{ sale.balance_due|floatformat:0 }}</span>
+            </div>
+            {% else %}
+            
+            {% endif %}
+        </div>
+
+        <div class="text-center text-[10px] text-slate-500 mt-6">
+            <p class="font-bold mb-1">THANK YOU FOR YOUR BUSINESS!</p>
+            <p class="mt-2 text-[8px] italic">Powered by MIMS</p>
+        </div>
+
+        <div class="border-b-4 border-dotted border-slate-200 mt-6 w-full"></div>
+    </div>
+</div>
+
+<style>
+    /* PRINT SPECIFIC STYLES FOR THERMAL PRINTERS */
+    @media print {
+        /* Hide everything */
+        body * {
+            visibility: hidden;
+            background-color: white !important;
+        }
+        
+        /* Show only Receipt */
+        #receipt, #receipt * {
+            visibility: visible;
+        }
+
+        /* Position Receipt exactly at top left */
+        #receipt {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%; /* Thermal printers usually treat width as 100% of paper */
+            margin: 0;
+            padding: 0;
+            box-shadow: none;
+            border: none;
+            max-width: 100%;
+        }
+
+        /* Hide Scrollbars and Sidebars */
+        aside, nav, header, footer, .no-print {
+            display: none !important;
+        }
+
+        /* Ensure Black Text for Thermal Paper */
+        .text-slate-500, .text-slate-800, .text-blue-600, .text-red-600 {
+            color: black !important;
+        }
+
+        /* Fix page margins */
+        @page {
+            margin: 0;
+            size: auto;
+        }
+    }
+</style>
+{% endblock %}

@@ -83,7 +83,8 @@ class LoanAdmin(admin.ModelAdmin):
 
     def sale_link(self, obj):
         # IMPORTANT: Change 'yourappname' to your actual Django app name
-        url = reverse("admin:yourappname_sale_change", args=[obj.id])
+        # FIXED: Changed 'yourappname' to 'mims'
+        url = reverse("admin:mims_sale_change", args=[obj.id])
         return format_html('<a class="button" href="{}">View Full Invoice</a>', url)
     sale_link.short_description = "Actions"
 
